@@ -1,14 +1,49 @@
 # Open Person Matching
 
-- [ ] Should be suitable replacement for private patient matching algorithms,
-      but broader use case
-- [ ] Uses hashes of nonce and simplified demographic strings
-- [ ] Never returns “not found”; instead responds with a Maybe with an
-      additional parameter that is unmatchable (so that Maybe responses don’t
-      give away that the responder has or doesn’t have information about a
-      person with the supplied information). The unmatchable value will usually
-      be a nonce hash for one of the supplied fields using a random byte array
-      for the hashed value.
+Open Person Matching is a person matching specification and reference
+implementation. It allows searching for nodes in a network that have records for
+a person without revealing that persons demogrphic information to those who do
+not already have it. Its primary use case is supporting finding a persons
+self-sovreign signing and encryption keys. This directly supports truly
+self-sovereign identity, non-repudiatable signatures of electronic documents,
+and private, client agnostic PKI-based encrypted communications with options for
+spam filtering agents. These use cases and the base algorithm also allow it to
+be used for patient matching and medical records search, a domain from which it
+draws many design goals.
+
+## Charateristics
+
+- [ ] Should be suitable replacement for proprietary and custom patient matching
+      algorithms, but applied to a broader set of use cases - [ ] finding a
+      person's published, use case specific signing and encryption keys - [ ]
+      specific use cases include - [ ] self sovereign identity token signing
+      keys - [ ] authorization document token signing keys - [ ] public and
+      sender-specific messaging encryption keys - [ ] patient matching for
+      medical records search
+- [ ] Uses hashes of nonce and demographic strings - [ ] For languages where
+      character substitution may take place simplified demographic strings may
+      be used - [ ] requests using simplified demographic strings must specify
+      that they are doing so and the ruleset they are employing - [ ] An example
+      ruleset may require that simplified demographic strings contain only
+      lowercase latin-1 alphanumeric characters, with whitespace and punctuation
+      removed, and accented and non-latin-1 characters substituted with defined
+      common replacement values - [ ] simplified demographic strings are not
+      intended to account for nicknames and alternate spellings. A requestor is
+      expected to make a secondary request using alternate values in such cases.
+      - [ ] each request and response should generate its own nonce and hashes
+      based on that nonce - [ ] it may seem appropriate to send some
+      sufficiently generic demographic information which can not be tied back to
+      a small group of individuals by itself - such as a postal code - without
+      nonce hashing in order to improve search performance on responding nodes.
+      However, doing so should be avoided because there may be unexpected
+      circumstances that cause this to reveal information to search
+      participants.
+- [ ] Never returns “not found” for a direct query; instead responds with a
+      Maybe with an additional parameter that is unmatchable (so that Maybe
+      responses don’t give away that the responder has or doesn’t have
+      information about a person with the supplied information). The unmatchable
+      value will usually be a nonce hash for one of the supplied fields using a
+      random byte array for the hashed value.
 - [ ] A Maybe response should indicate additional fields that may allow a match
 - [ ] Additional fields may indicate a relevant time frame
 - [ ] Initial request includes a nonce used to calculate the nonce hashes and
@@ -22,20 +57,36 @@
 - [ ] When a request or believes that there is a match they send a request with
       a public key. Responses to public key requests must match with very high
       confidence… (maybe request always have the key?)
-- [ ] …
+- [ ] should be as simple as possible to explain
+- [ ] should be as simple as possible to implement
+
+## To incorporate
+
+- [ ] use facilitators as an intermediary between requestor and responder to
+      hide the source of Maybe responses
+- [ ] broadcast requests must inherently have a "not found" state so that the
+      requestor is not flooded by responses from every node
+- [ ] Responses that are Maybe responses should be limited to matches that meet
+      a certain minimum threshold of demographics met
+- [ ] Responses that are Maybe responses should not be returned for a request
+      that contains a non-matching requestor specific identifier hash
+- [ ] Responses that are Maybe responses should not be returned for a
+      demographic set that contains a requestor specific identifier unless an
+      equivalent demographic set without the requestor specific identifier (a
+      "public" or "general" demogrphic set) should also be considered.
 
 ## Identity is not Authentication; Authentication is not Authorization
 
 The distinction can sometimes be subtle, but it is very important.
 
 A name is an identifier. It helps to uniquely select a person or thing from a
-set of similar persons or things. But, just because you call me by my name does
-me that you are me.
+set of similar persons or things. But, just because you know my name does mean
+that you are me.
 
-Authentication is that process of proving that something is what it claims to
-be. This involves both identifying the thing and verifying facts about it that
-prove it is the identified thing. When you log in to a service with a username
-and password the username identifies you uniquely among all other users of the
+Authentication is the process of proving that something is what it claims to be.
+This involves both identifying the thing and verifying facts about it that prove
+it is the identified thing. When you log in to a service with a username and
+password the username identifies you uniquely among all other users of the
 service. The password - in theory, something only you know - proves that you
 know something only you could know (and that is both why passwords work and why
 passwords fail.)
