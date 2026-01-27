@@ -2,78 +2,15 @@
 
 Open Person Matching is a person matching specification and reference
 implementation. It allows searching for nodes in a network that have records for
-a person without revealing that persons demogrphic information to those who do
-not already have it. Its primary use case is supporting finding a persons
-self-sovreign signing and encryption keys. This directly supports truly
-self-sovereign identity, non-repudiatable signatures of electronic documents,
-and private, client agnostic PKI-based encrypted communications with options for
-spam filtering agents. These use cases and the base algorithm also allow it to
-be used for patient matching and medical records search, a domain from which it
-draws many design goals.
-
-## Charateristics
-
-- [ ] Should be suitable replacement for proprietary and custom patient matching
-      algorithms, but applied to a broader set of use cases - [ ] finding a
-      person's published, use case specific signing and encryption keys - [ ]
-      specific use cases include - [ ] self sovereign identity token signing
-      keys - [ ] authorization document token signing keys - [ ] public and
-      sender-specific messaging encryption keys - [ ] patient matching for
-      medical records search
-- [ ] Uses hashes of nonce and demographic strings - [ ] For languages where
-      character substitution may take place simplified demographic strings may
-      be used - [ ] requests using simplified demographic strings must specify
-      that they are doing so and the ruleset they are employing - [ ] An example
-      ruleset may require that simplified demographic strings contain only
-      lowercase latin-1 alphanumeric characters, with whitespace and punctuation
-      removed, and accented and non-latin-1 characters substituted with defined
-      common replacement values - [ ] simplified demographic strings are not
-      intended to account for nicknames and alternate spellings. A requestor is
-      expected to make a secondary request using alternate values in such cases.
-      - [ ] each request and response should generate its own nonce and hashes
-      based on that nonce - [ ] it may seem appropriate to send some
-      sufficiently generic demographic information which can not be tied back to
-      a small group of individuals by itself - such as a postal code - without
-      nonce hashing in order to improve search performance on responding nodes.
-      However, doing so should be avoided because there may be unexpected
-      circumstances that cause this to reveal information to search
-      participants.
-- [ ] Never returns “not found” for a direct query; instead responds with a
-      Maybe with an additional parameter that is unmatchable (so that Maybe
-      responses don’t give away that the responder has or doesn’t have
-      information about a person with the supplied information). The unmatchable
-      value will usually be a nonce hash for one of the supplied fields using a
-      random byte array for the hashed value.
-- [ ] A Maybe response should indicate additional fields that may allow a match
-- [ ] Additional fields may indicate a relevant time frame
-- [ ] Initial request includes a nonce used to calculate the nonce hashes and
-      the nonce hashes. It must include a universally unique request id.
-- [ ] A response looks like a request, except that it may also contain
-      additional field values and must include a correlation id specifying the
-      request id.
-- [ ] A request or decides whether to continue with a more specific request or
-      to abandon further requests
-- [ ] This protocol may be expensive for responders, who may throttle requests
-- [ ] When a request or believes that there is a match they send a request with
-      a public key. Responses to public key requests must match with very high
-      confidence… (maybe request always have the key?)
-- [ ] should be as simple as possible to explain
-- [ ] should be as simple as possible to implement
-
-## To incorporate
-
-- [ ] use facilitators as an intermediary between requestor and responder to
-      hide the source of Maybe responses
-- [ ] broadcast requests must inherently have a "not found" state so that the
-      requestor is not flooded by responses from every node
-- [ ] Responses that are Maybe responses should be limited to matches that meet
-      a certain minimum threshold of demographics met
-- [ ] Responses that are Maybe responses should not be returned for a request
-      that contains a non-matching requestor specific identifier hash
-- [ ] Responses that are Maybe responses should not be returned for a
-      demographic set that contains a requestor specific identifier unless an
-      equivalent demographic set without the requestor specific identifier (a
-      "public" or "general" demogrphic set) should also be considered.
+a person without revealing that person's demographic information to those who do
+not already have it. Its primary use case is supporting finding a person's
+self-sovereign signing and encryption keys. This directly supports truly
+self-sovereign identity, non-repudiatable signatures of electronic documents -
+including digital authorization documents authorizing a person's agents to act
+on their behalf - and private, client agnostic PKI-based encrypted
+communications with options for spam filtering agents. These use cases and the
+base algorithm also allow it to be used for patient matching and medical records
+search, a domain from which it draws many design goals.
 
 ## Identity is not Authentication; Authentication is not Authorization
 
@@ -98,56 +35,81 @@ the agent must be identified and authenticated, the authorizer must be
 identified and authenticated, and the authorization must be defined and within
 the authority of the authorizer to give.
 
-That is, Authentication builds on Identity and privacy. Authorization builds on
+That is, Authentication builds on Identity and Privacy. Authorization builds on
 Authentication.
 
 Why does this matter? Searching for a person's identity signing key, a patient’s
 medical records, or other records requires that we first identify the person
 that we are talking about. We also need to identify the person performing the
 search. Having identified the searcher we need to authenticate them to ensure
-that they are who we think they are. Finally, we need to verify that they are
+that they are who they claim to be. Finally, we need to verify that they are
 authorized to do the search.
 
-[Critically, that’s all just table stakes. It is the bare minimum that we need
-to do in a simple network environment where one entity controls the security of
-and trust each of the nodes. A Health Information Network mimics that, but it is
-not that. Every node is its own organization. They agree to follow certain
-policies and to allow audits, but the network has limited visibility in to what
-each participant is actually doing. It is hard enough to secure a network when
-you own every node. It is much harder when all you can do is periodic audits. An
-inter-organizational network must meet a higher standard.]
+Unfortunately, that's just the beginning. It is the bare minimum that we need to
+do in a simple network environment where one entity controls the security of
+each node and therefore trusts them. On such a simple network the controlling
+entity knows that it is not disclosing confidential information, such as a
+person's personally identifiable information or a potentially reusable
+authentication token, by virtue of the fact that it controls every node.
 
-Critically, that’s all just table stakes. It is the bare minimum that we need to
-do in a simple network environment where one entity controls the security of and
-trust each of the nodes. A heterogeneous inter-organizational network may take
-steps to mimic that, but it is not that. Every node is its own organization.
-They can agree to follow certain policies and to allow audits, but the network
-has limited visibility in to what each participant is actually doing. It is hard
-enough to secure a network when you own every node. It is much harder when all
-you can do is periodic audits. Communication protocols for an
-inter-organizational network must meet a higher standard.
+A heterogeneous inter-organizational network may take steps to mimic that, but
+it is not that. Every node is its own organization. They can agree to follow
+certain policies and to allow audits, but the network has limited visibility in
+to what each participant is actually doing. It is hard enough to secure a
+network when you own every node. It is much harder when all you can do is
+periodic audits. Communication protocols for an inter-organizational network
+must meet a higher standard. An inter-organizationl network must take steps to
+verify that it is only communicating confidential information to other nodes
+that are authorized to recieve it or have demonstrated that they already have
+it.
 
-[As is highlighted by Epic’s recent lawsuit allegations against Health Gorilla
-and others, Health Information Networks like Carequality and TEFCA currently
-don’t do request level authentication and authorization. There are various
-standards to be met before joining the network and audits that must be passed
-periodically, but once a node is on the network there is only a basic check to
-see if they are using a purpose of use for which they are approved and there is
-documentation (but not authentication) of the requestor and their NPI. There is
-no authentication of the requestor, no authentication of the patient they are
-acting on behalf of, and no verification of authorization. This is quite normal
-for health care, but it is also a potential enabler for various kinds of fraud.
-Audit logs become potentially vulnerable honeypots filled with valuable PII.]
+As of early 2026, Health Information Networks like Carequality and TEFCA are an
+example of heterogeneous inter-organizational networks that take steps to mimic
+a simpler network environment through varification of the entities that are
+allowed to join and security controls like mutual TLS, audit logs, and periodic
+audits. However, as is highlighted by Epic’s January 2026 lawsuit allegations
+against Health Gorilla and others, these networks are made up of unique
+organizations with different motivations and interpretations of their shared
+standards that can lead to a loss of trust.
 
-Searching for a person’s records in an inter-organizational network means taking
-steps to ensure that we don’t reveal the person’s demographic information
-unnecessarily. [In a Health Information Network today, this is often handled by
-a Master Patient Index or Record Locator Service that has some pre-populated
-knowledge or algorithm for determining whether a Provider is likely to have
-records. Notably, providers do not trust this determination and run their own
-patient matching. The implication is that the MPI or RLS is likely to result in
-contacting at least some providers that will not actually respond with records
-for the patient, if they ever had any.]
+The lawsuit's alledged bad behavior relies on communication protocols that don’t
+do request level authentication and authorization. Once an organization is on
+the network there is only an organization level authentication and a basic check
+to see if they are claiming a purpose of use for which the organization is
+approved. There is documentation of the requestor and their National Provider
+Identifier. But there is no authentication of the requestor, no authentication
+of the patient they are acting on behalf of, and no verification of
+authorization by the patient. The patients demographic information is sent with
+the request and the response is sent based on the trust conferred on the
+requestor and responder when they are given access to the network. In the case
+of Individual Access Services - where patients use a service to request their
+own records - the patient's identity is authenticated, but authorization
+consists of limiting the patient to requesting their own information. Also,
+patient information and the authentication token are still routed to providers
+based on their trusted status on the network.
+
+Health Information Networks do take steps to ensure that requests are only
+routed to providers that are likely to have a patient's records. This is often
+handled by a Master Patient Index or Record Locator Service that has some
+pre-populated knowledge or defined algorithm for routing requests. This has both
+performance and security benefits. On the performance side, routing requests to
+all possible providers would require bandwidth and compute resources that would
+be prohibitivly expensive for participants to allocate. From a security
+perspective, preventing patient personally identifiable information from being
+sent to every possible provider means that every provider's audit logs don't
+contain every possible patient's data. Notably, providers can not fully rely on
+the network's patient matching and run their own patient matching to ensure they
+don't disclose the wrong patient's health records. The implication is that the
+MPI or RLS is likely to result in contacting at least some providers that will
+not actually respond with records for the patient.
+
+Because Open Person Matching is intended to operate not only in a trusted
+network like an Health Information Network but also in an open one, it cannot
+rely on audited trusted nodes. Even in a trusted network every point of trust
+represents a point where security can fail. Open Person Matching seeks to learn
+from and improve upon the design and experience of Health Information Networks.
+
+## How it works
 
 The Open Person Matching Protocol is designed to use cryptographic hashes of
 demographic data and other identifiers to provide a high degree of certainty of

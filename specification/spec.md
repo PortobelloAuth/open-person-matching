@@ -27,7 +27,7 @@ identity hidden from each other until direct communication is needed.
 
 ### Requestor
 
-The party initiating a Search Flow or Exchange Flow
+The party initiating a Search Flow or other flow
 
 ### Responder
 
@@ -45,12 +45,12 @@ match.
 ### Routing Salt
 
 A relatively high entropy string, rotated periodically, which can be determined
-independently by Requestors and Responders who have a common identifier (such as
-First Name and Last Name) for a Person and is used along with that common
-identifier as the source for a hash to generate a Routing Key. NOTE: the common
-identifier must be the same across all participants in the network. It should
-reduce the number of possibly matched Persons significantly, but probably should
-not consistently be unique to each Person.
+independently by Requestors and Responders who have a complex demographic
+identifier (such as `full_name`) for a Person and is used along with that
+identifier as the source for a hash to generate a Routing Key. NOTE: the complex
+demographic identifier must be the same across all participants in the network.
+It should reduce the number of possibly matched Persons significantly, but
+probably should not consistently be unique to each Person.
 
 The method for determining Routing Salt sources is defined as a property of the
 network. However, two example methods are outlined here:
@@ -81,15 +81,6 @@ network. However, two example methods are outlined here:
    specification's Routing Salt rotation provisions.) This method requires that
    the authoritative node have sufficient redundancy and provide some means for
    participants to authenticate updates from the authoritative node.
-3. Cooperative XOR voting - As the Routing Salt rotation period is about to
-   expire each Facilitator attempts to notify each other Facilitator of it's
-   contribution to the new Routing Salt source - a cryptographically random 256
-   byte sequence. One a Facilitator has valid (sufficiently high entropy)
-   contributions from one quarter or more of the Facilitators it publishes a
-   vote for the valid contributions it has recieved. Contributions that are
-   included in the lesser of one quarter of top 10 most votes, including ties,
-   are XOR'd together and published as a proposed Routing Salt (or just use Raft
-   or Paxos...)
 
 #### Deriving a Routing Salt
 
@@ -117,7 +108,7 @@ frequent as to make reregistration prohibitively expensive.
 
 ### Routing Key
 
-A crypotgraphic hash of a common identifier (such as First Name and Last Name)
+A crypotgraphic hash of a complex demographic identifier (such as `full_name`)
 for a Person and a Routing Salt that is used to route Requests to Responders
 that are likely to have matching documents for the Person.
 
@@ -209,24 +200,79 @@ A Search Request is a JSON object containing these key - value pairs:
   for secure communication with a matched Responder
 - `hashes` - an array of demographic hash objects, as defined next
 
+#### Demographic Hash Objects
+
+Several useful demographic types are insufficiently complex (they have too few
+possible values) to be effectively used in a hash by themselves because an
+attacker could swiftly calculate a "rainbow table" (a table of hashes obtained
+from each possible input value when using the supplied salt) to deduce the input
+value. Therefore demographic hash objects contain a component array of input
+descriptors specifying in order the type and normalization rules to be applied
+before concatenating the input values together and calculating the hash. This
+component array must contain at least 1 complex demographic identifier and at
+least 1 other demographc identifier. For purposes of this rule, whichever
+complex demographic identifier is used for the routing key counts as a simple
+demographic identifier because the requestor has already demonstrated that they
+likely have access to the routing key's complex demographic identifier.
+
 A demographic hash object contains these key - value pairs:
 
-- `t` - the well known "type" of the input demographic identifier.
-- `h` - the hashed value, using the Request's nonce as the hashing algorithm's
-  salt.
-- `n` - an array of normalization rules applied to the value before calculating
-  the hash. Rules should be applied in the order that they appear.
-- `r` - an optional boolean indicating whether or not matching this hash is
-  required. A `false` value indicates that the Requestor is aware that the
-  Responder may or may not have this identifier. A `true` value indicates that
-  the responder must have the identifier.
+- `con` - an array of input descriptor objects, indicating how the hash input is
+  intended to be constructed
+- `hash` - the hashed value, using the Request's nonce as the hashing
+  algorithm's salt
+- `req` - (optional) a boolean indicating whether or not matching this hash is
+  required. An undefined or `false` value indicates that the Requestor is aware
+  that the Responder may or may not be able to match this identifier. A `true`
+  value indicates that the Responder must be able to match the identifier.
+- `rel` - (optional) the relationship of the person whom the hashed value
+  identifies to the Person being identified. If this key is undefined the hash
+  refers to the Person themself. Example values may include `parent`, `child`,
+  `spouse`, `friend`, etc. Relationship values should be all lowercase letters
+  in alphabets where such a distinction exists. Responders may ignore
+  relationship hashes.
 
-#### Well Known Demographic Identifier Types
+##### Demographic Input Descriptors
 
-- `full_name` - the Person's first and last name as it would likely appear on a
-  government issued ID or medical card
-- `given_name` - the Person's first given name
-- `family_name` - the Person's family name
+Demographic Input Descriptors are objects containing these key = value pairs:
+
+- `typ` - the well known "type" of the input demographic identifier.
+- `nrm` - an array of normalization rules applied to the identifier value before
+  including it in the hash input. Rules should be applied in the order that they
+  appear.
+
+A Demographic input descriptor that results in an empty string at any point
+during normalization never matches.
+
+#### Well Known Complex Demographic Identifier Types
+
+- `full_name` - the Person's first, middle, and last names as it would likely
+  appear on a government issued ID or medical card. Depending on the Person,
+  this may or may not include middle names.
+- `address` - the Person's fully formatted address
+- `dl` - the Person's drivers license in the format
+  `{country code}:{state abbreviation}:{id}`
+- `gv` - the Person's government issued document in the format
+  `{country code}:{type}:{id}`, where `type` may be `p` for passport, `v` for
+  visa, `id` or `id:{state abbreviation}` for ID card or drivers license
+- `mi` - the Person's medical insurance plan identifier
+
+##### Simple Demographic Identifier Types
+
+- `birthdate` - the Person's birth date in `YYYY-MM-DD` format
+- `phone` - the Person's phone number e164 format, starting with a `+` and
+  including only digits thereafter
+- `phone4` - the last 4 digits of the Person's phone number e164 format (may not
+  be combined with `phone`)
+- `ssn` - the last 4 digits of the Person's social security number
+- `cc` - the last 4 digits of the Person's credit card number (Since a Person
+  may have multiple credit card numbers on file and there is no way to
+  reasonably distinguish order, the Request may be required to send multiple
+  versions of a hash containing this identifier)
+- `street` - the building number and street name from the Person's address (may
+  not be combined with `address`)
+- `zip` or `postal` - the postal code from the Person's address (may not be
+  combined with `address`)
 
 #### Well Known Demographic Identifier Nomalization Rules
 
@@ -239,16 +285,58 @@ A demographic hash object contains these key - value pairs:
   groups, anchors, etc. will result in the Facilitator rejecting the Request)
 - `no_space` - whitespace is removed
 - `no_punct` - punctuation, such as `.`, `,`, `#`, `-`, etc. is removed
+- `us-101-key` - the conversion of all letters to suitable lowercase English
+  letters through lowercasing and typographic approximation (needs explicit
+  specification) to letters which may be input using a standard US 101-key
+  keyboard without the use of any modifier keys
+- `us-reduced_v0` - a standardized combination of normalization rules intended
+  to be used as a default for names and addresses used in the United States of
+  America consisting of: `no_punct`, `no_space`, and `us-101-key`. While it will
+  not cover all cases, it is intended to account for many of the variations that
+  are likely to appear in demographic data that has been digitally recorded by
+  humans using a keyboard.
 
 ### Search Response
 
-## Exchange Flow
+A Search Response is a JSON object containing these key - value pairs:
 
-The Exchange Flow enables the exchange of documents... it is more strict in its
-matching requirements
+- `id` - a universally unique Response ID to correlate follow up requests with
+- `req_id` - the `id` of the Request that prompted this response
+- `nonce` - a 12-byte nonce in lowercase hexadecimal format from a
+  cryptographically random source. This key is called `nonce` specifically to
+  indicate that its value should never be used in more than one Response.
+- `pub` - (optional) a session public key for the Request session, to be used
+  for secure communication with a matched Responder
+- `hashes` - an array of demographic hash objects, as defined for Search
+  Requests
 
-### Roles in the Exchange Flow
+Upon recieving a Search Request with a matching Routing Key, a Responder uses
+the Request `nonce` and demographic hash objects to regenerate the hashes for
+and Person for whom it may have records. A Responder generates a Search Response
+only after it has recieved a Search Request that meets these criteria:
 
-### Exchange Request
+1. The Request's Routing Key matches
+2. All required demographic hash objects' hashes match exactly
+3. At least one demographic hash object's hash matches exactly
 
-### Exchange Response
+A Responder must include demographic hash objects with the same key - value
+pairs except using a hash calculated using the newly generated Response nonce
+for all matches. A Responder may also respond with additional demographic hash
+objects indicating a desire for further verification. If the Responder does not
+include a public key (??) it is inviting the Requestor to make a more detailed
+Request to confirm the match.
+
+In order to detect malicious Requestors, Facilitators should frequently include
+one or more Maybe Responses that include hashes that can not possibly be matched
+by the Requestor because they are generated from random values.
+
+## Summary of the Search Flow
+
+(Outlined. To be completed...)
+
+Requestor requests Facilitator sends Request to Responders Responders respond
+with matches Requestor verifies Response matches and sends a correlated Document
+Request using the Response `id`, along with any required credentials, possibly
+using the provided session public keys to encrypt the Document Request Requestor
+may need to make another, more specific Request in order to obtain a Responders
+public key.
