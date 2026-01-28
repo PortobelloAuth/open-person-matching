@@ -154,14 +154,24 @@ Facilitator. A Requestor may prepare parallel Requests for multiple
 Facilitators, each Request matching the same Person, but each Request must use
 its own nonce to hash the Request's descriptors.
 
+The Requestor will recieve Search Responses from the Facilitator, each
+containing its own nonce and demographic hashes. For each Response the Requestor
+will verify that the demographic hashes match. The Requestor will then determine
+whether it will make additional Search Requests or Document Requests.
+
 #### The Search Facilitator
 
 A Facilitator recieves a Search Request from a Requestor. If the Request
-contains Authorization data, the Facilitator must validate the Authorization
+contains authorization data, the Facilitator must validate the authorization
 data before proceeding to further process the Request. After validation, the
-Facilitator broadcasts the body of the Request, sans Authorization and signed by
-the Facilitator, to the network of potential Responders. As Responses come in
-the Facilitator anonymizes them and forwards them to Requestors for follow up.
+Facilitator delivers the body of the Request, replacing the original
+authorization data with authroization data signed by the Facilitator. If the
+Request contains a response ID (`res_id`) it will be routed specifically to the
+Responder who sent that Response, though it may not be routable if it is not
+within the network's defined session timeout. Requests without a response ID are
+sent to all other Facilitators and Responders that have registered the Request's
+Routing Key. As Responses come in (within the network's defined timeout) the
+Facilitator collects them and forwards them to Requestors for follow up.
 
 Facilitators also recieve Routing Registrations from Responders. This is the
 means by which Responders indicate that they should recieve Requests for a given
@@ -186,12 +196,14 @@ every Person's Routing Keys upon recieving each Request.
 A Search Request is a JSON object containing these key - value pairs:
 
 - `id` - a universally unique Request ID to correlate responses with requests
+- `res_id` - (optional) the `id` of a previous Response that prompted this
+  Request
 - `auth` - (optional) authorization data for the Request, if necessary. If
   present, the authorization data should be an object containing a `type` key
   with a well-known identifier indicating the protocol in use. No Request
   authentication protocols are specified at this time. Acceptable authentication
   protocols are defined by an implementing network and must be supported by all
-  facilitators in the network.
+  Facilitators in the network.
 - `route` - an array of 1 to 3 Routing Keys for the Request
 - `nonce` - a 12-byte nonce in lowercase hexadecimal format from a
   cryptographically random source. This key is called `nonce` specifically to
@@ -199,6 +211,10 @@ A Search Request is a JSON object containing these key - value pairs:
 - `pub` - (optional) a session public key for the Request session, to be used
   for secure communication with a matched Responder
 - `hashes` - an array of demographic hash objects, as defined next
+- `data` - (optional) if a correlated `res_id` is present, this key may contain
+  url-safe base64 encoded data for the Responder. Except in well specified
+  cases - of which there are currently none - this data should be encrypted so
+  that it can only be read by the original Responder.
 
 #### Demographic Hash Objects
 
@@ -209,11 +225,12 @@ from each possible input value when using the supplied salt) to deduce the input
 value. Therefore demographic hash objects contain a component array of input
 descriptors specifying in order the type and normalization rules to be applied
 before concatenating the input values together and calculating the hash. This
-component array must contain at least 1 complex demographic identifier and at
-least 1 other demographc identifier. For purposes of this rule, whichever
-complex demographic identifier is used for the routing key counts as a simple
-demographic identifier because the requestor has already demonstrated that they
-likely have access to the routing key's complex demographic identifier.
+component array must contain at least:
+
+- the inputs to the routing key before hashing (that is, the defined complex
+  demographic identifier for the network and the Routing Salt)
+- at least 1 other complex demographic identifier
+- at least 1 other demographic identifier
 
 A demographic hash object contains these key - value pairs:
 
@@ -260,7 +277,7 @@ during normalization never matches.
 ##### Simple Demographic Identifier Types
 
 - `birthdate` - the Person's birth date in `YYYY-MM-DD` format
-- `phone` - the Person's phone number e164 format, starting with a `+` and
+- `phone` - the Person's phone number in e164 format, starting with a `+` and
   including only digits thereafter
 - `phone4` - the last 4 digits of the Person's phone number e164 format (may not
   be combined with `phone`)
@@ -300,8 +317,8 @@ during normalization never matches.
 
 A Search Response is a JSON object containing these key - value pairs:
 
-- `id` - a universally unique Response ID to correlate follow up requests with
-- `req_id` - the `id` of the Request that prompted this response
+- `id` - a universally unique Response ID to correlate follow up Requests with
+- `req_id` - the `id` of the Request that prompted this Response
 - `nonce` - a 12-byte nonce in lowercase hexadecimal format from a
   cryptographically random source. This key is called `nonce` specifically to
   indicate that its value should never be used in more than one Response.
@@ -309,6 +326,10 @@ A Search Response is a JSON object containing these key - value pairs:
   for secure communication with a matched Responder
 - `hashes` - an array of demographic hash objects, as defined for Search
   Requests
+- `data` - (optional) if a correlated `req_id` is present, this key may contain
+  url-safe base64 encoded data for the Requestor. Except in well specified
+  cases - of which there are currently none - this data should be encrypted so
+  that it can only be read by the original Requestor.
 
 Upon recieving a Search Request with a matching Routing Key, a Responder uses
 the Request `nonce` and demographic hash objects to regenerate the hashes for
@@ -319,24 +340,67 @@ only after it has recieved a Search Request that meets these criteria:
 2. All required demographic hash objects' hashes match exactly
 3. At least one demographic hash object's hash matches exactly
 
-A Responder must include demographic hash objects with the same key - value
-pairs except using a hash calculated using the newly generated Response nonce
-for all matches. A Responder may also respond with additional demographic hash
-objects indicating a desire for further verification. If the Responder does not
-include a public key (??) it is inviting the Requestor to make a more detailed
-Request to confirm the match.
+A Responder must include matching demographic hash objects with the same key -
+value pairs except using a hash calculated using the newly generated Response
+nonce for all matches. A Responder may also respond with additional demographic
+hash objects indicating a desire for further verification; this is known as a
+Maybe Response. If the Responder does not include a public key it is inviting
+the Requestor to make an additional Request to confirm the match.
 
-In order to detect malicious Requestors, Facilitators should frequently include
-one or more Maybe Responses that include hashes that can not possibly be matched
-by the Requestor because they are generated from random values.
+#### Maybe Response
 
-## Summary of the Search Flow
+A Responder may include demographic hash objects that did not exist in the
+original Request, indicating a desire for further verification. This is known as
+a Maybe Response.
 
-(Outlined. To be completed...)
+#### Facilitator Generated Maybe Responses
 
-Requestor requests Facilitator sends Request to Responders Responders respond
-with matches Requestor verifies Response matches and sends a correlated Document
-Request using the Response `id`, along with any required credentials, possibly
-using the provided session public keys to encrypt the Document Request Requestor
-may need to make another, more specific Request in order to obtain a Responders
-public key.
+In order to detect and prevent infomration harvesting by malicious Requestors,
+Facilitators should frequently include one or more Maybe Responses that include
+hashes that can not possibly be matched by the Requestor because they are
+generated from random values. Malicious Requestors should be prevented from
+continuing to use the network according to network defined policies.
+
+### Document Request
+
+A Document Request is a Search Request containing both a response ID (`res_id`)
+and a `data` value.
+
+### Document Response
+
+A Document Response is a Search Response containing both a request ID (`res_id`)
+and a `data` value.
+
+### Summary of the Search Flow
+
+1. a Requestor submits a Request to a Facilitator
+2. the Facilitator sends the Request to registered Responders with a matching
+   Routing Key and other Facilitators, who forward the Request to their
+   registered Responders with a matching Routing Key
+3. Responders respond with matching Responses within a set, network defined
+   timeframe
+4. Facilitators collate Responses, including Facilitator Generated Maybe
+   Responses, and send them to the Facilitator or Requestor from which they
+   recieved the Request, with all Responses eventually collated and sent to the
+   Requestor
+5. the Requestor verifies Response matches and sends a correlated Document
+   Request using the Response `id`, along with any required credentials,
+   possibly using the provided session public keys to encrypt the Document
+   Request. The Requestor may need to make another, more specific Request in
+   order to obtain a public key for the Responder.
+
+### Timeouts
+
+While specific timeout values are defined by the implementing network it is
+useful to define timeouts that are refered to in this specification.
+
+session timeout - the time period within which a Facilitator must maintain a
+mapping between
+
+- a Request ID and a Requestor or Facilatator
+- a Response ID and a Responder
+
+in order be able to route correlated Responses and Requests to their appropriate
+destination. Because Requests and Responses may travel through multiple
+Facilitators, participants must ensure that they deliver correlated messages as
+quickly as possible, preferably within less than half the session timeout.
