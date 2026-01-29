@@ -91,3 +91,6 @@ inclusion.
 - [ ] `id:{1}:{2}` - an identification number associated with the person, such
       as a medical ID, drivers license ID... (possible demographic identifier
       type)
+- [ ] `n{optional suffix}` - a network specific (loosely interpreted) demographic
+      identifier. The optional suffix allows for many such identifiers for
+      networks that need them.

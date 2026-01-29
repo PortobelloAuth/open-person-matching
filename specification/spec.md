@@ -231,6 +231,7 @@ component array must contain at least:
   demographic identifier for the network and the Routing Salt)
 - at least 1 other complex demographic identifier
 - at least 1 other demographic identifier
+- preferably, 8 to 12 random bits
 
 A demographic hash object contains these key - value pairs:
 
