@@ -261,6 +261,27 @@ Demographic Input Descriptors are objects containing these key = value pairs:
 A Demographic input descriptor that results in an empty string at any point
 during normalization never matches.
 
+#### Random Bits Demographic Identifier Type
+
+The random bits demographic identifier type is not a true demographic
+identifier, but it functions as one in non-Routing Key demographic hashes. The
+inclusion of random bits in a demographic hash requires the Responder to deduce
+the random bits used to generate the hash by calculating the hash with all
+possible values for the specified number of bits and 0 bits for the remaining
+bits required to make a byte. This is useful for demographic hashes that
+otherwise would leak input information because they are too simple. The random
+bits require a Responder to do 2^n hashes, but they require an attacker to do
+2^n multiplied by the complexity of the information the attacker does not know.
+
+- `b{digits}` - `{digits}` is the base 10 count of the number of random bits
+  included as a hash input. Values less than 8 are invalid and will be rejected
+  by Facilitators. Values larger than 12 are likely to be prohibitive for
+  Responders and result in the demographic hash being ignored.
+
+NOTE: DO NOT attempt to use this as a mechanism to exchange secret key material.
+The demographic information that makes up the rest of the hash input is known by
+many parties, all of whom could easily deduce these bits.
+
 #### Well Known Complex Demographic Identifier Types
 
 - `full_name` - the Person's first, middle, and last names as it would likely
@@ -270,8 +291,9 @@ during normalization never matches.
 - `dl` - the Person's drivers license in the format
   `{country code}:{state abbreviation}:{id}`
 - `gv` - the Person's government issued document in the format
-  `{country code}:{type}:{id}`, where `type` may be `p` for passport, `v` for
-  visa, `id` or `id:{state abbreviation}` for ID card or drivers license
+  `{country code}:{type}:{id#}`, where `{type}` may be `p` for passport, `v` for
+  visa, or `id` or `id:{state abbreviation}` for ID card or drivers license and
+  `{id#}` is the document ID number
 - `mi` - the Person's medical insurance plan identifier
 
 ##### Simple Demographic Identifier Types
