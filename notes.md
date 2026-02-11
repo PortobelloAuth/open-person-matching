@@ -91,6 +91,15 @@ inclusion.
 - [ ] `id:{1}:{2}` - an identification number associated with the person, such
       as a medical ID, drivers license ID... (possible demographic identifier
       type)
-- [ ] `n{optional suffix}` - a network specific (loosely interpreted) demographic
-      identifier. The optional suffix allows for many such identifiers for
-      networks that need them.
+- [ ] `n{optional suffix}` - a network specific (loosely interpreted)
+      demographic identifier. The optional suffix allows for many such
+      identifiers for networks that need them.
+- [ ] SHA-2-256 can be replaced by more modern and secure (slower) password
+      hashing algorithms
+- [ ] `b{digits}` hashes that require the responder to discover the random bits
+      represent a vector for a DOS-style attack. Consider having the responder
+      provide a public key as an initial response with its own hash, ignoring
+      any hashes in the request to put the bulk of the intial work on the
+      requestor. The hash may be able to be based on the key derived from the
+      request public key and the response public key, making it unique to the
+      requestor and responder.

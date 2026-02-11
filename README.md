@@ -116,3 +116,30 @@ demographic data and other identifiers to provide a high degree of certainty of
 a matched person when both requesting and responding nodes have the same or
 similar demographic data without revealing that data to anyone who does not
 already have it.
+
+There are two distinct types of hashes used in Open Patient Matching: routing
+keys and demographic hashes.
+
+### Routing Keys
+
+Routing keys are hashes of a relatively low risk demographic identifier used to
+route requests only to potential responders that may actually have a match. They
+are often deliberately not entirely specific to a unique person in order to
+avoid revealing information about the person being searched for - a key
+requirement of the standard.
+
+### Demographic Hashes
+
+Demographic hashes are intended to uniquely identify a person - containing
+multiple demographic identifiers as well as random bits to create a hash that is
+relatively easy for a responder with the source demographics to recalculate and
+match but extremely difficult for someone without that information to determine
+the source demographics. Demographic hashes are the primary mechanism by which
+Open Patient Matching proves that a responder and a requester both have matching
+demographic information without disclosing it to parties that do not already
+have it.
+
+Cryptographic hashes are a well established tool used for decades for password
+matching and document verification. They are also generally resistant to the
+capabilities of quantum computers - so much so that some post-quantum
+cryptographic algorithms are based on them.
