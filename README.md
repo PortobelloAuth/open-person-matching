@@ -16,6 +16,13 @@ Separate specifications for self-sovereign signing and encryption keys and
 digital authorization documents (and other contracts) are in progress and will
 be referenced here after their first public drafts are published.
 
+## Draft Status
+
+Please note that this repository and specification is currently in **DRAFT**
+status. It is **not** yet licensed openly and is **not** considered fit for use.
+This draft is published and licensed so that it may be reviewed and
+recommendations for changes obtained.
+
 ## Identity is not Authentication; Authentication is not Authorization
 
 The distinction can sometimes be subtle, but it is very important.
