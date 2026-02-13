@@ -12,6 +12,10 @@ communications with options for spam filtering agents. These use cases and the
 base algorithm also allow it to be used for patient matching and medical records
 search, a domain from which it draws many design goals.
 
+Separate specifications for self-sovereign signing and encryption keys and
+digital authorization documents (and other contracts) are in progress and will
+be referenced here after their first public drafts are published.
+
 ## Identity is not Authentication; Authentication is not Authorization
 
 The distinction can sometimes be subtle, but it is very important.
