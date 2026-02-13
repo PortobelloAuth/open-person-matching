@@ -47,10 +47,15 @@ match.
 A relatively high entropy string, rotated periodically, which can be determined
 independently by Requestors and Responders who have a complex demographic
 identifier (such as `full_name`) for a Person and is used along with that
-identifier as the source for a hash to generate a Routing Key. NOTE: the complex
-demographic identifier must be the same across all participants in the network.
-It should reduce the number of possibly matched Persons significantly, but
-probably should not consistently be unique to each Person.
+identifier as the source for a hash to generate a Routing Key.
+
+NOTE: the complex demographic identifier is a network property. It must be the
+same across all participants in the network. It should reduce the number of
+possibly matched Persons significantly, but is not required to be unique to each
+Person. A reasonable number of routing key collisions (or false positives,
+depending on how we view them) that are relatively evenly distributed through
+the network provides additional anonimity regarding the Person being matched at
+the cost of additional network traffic.
 
 The method for determining Routing Salt sources is defined as a property of the
 network. However, two example methods are outlined here:
@@ -67,10 +72,11 @@ network. However, two example methods are outlined here:
    material each participant can derive the recent Routing Salt sources
    independently and still derive a matching result. The blockchain itelf serves
    to provide authentication and redundancy for updating the Routing Salt
-   source.
+   source. The blockchain also serves to maintain discoverability of old Routing
+   Salt sources, though this also means that old sources are never forgotten.
 2. Published by Network Authority - An authoritative node on the network,
    perhaps run by the authority that approves Facilitators or participants for
-   the network, generates cryptographically a random salt seed and publishes it
+   the network, generates a cryptographically random salt seed and publishes it
    to a well known location with the last three Routing Salt sources and their
    associated unique sequence identifier. Routing Salt sources MUST maintain
    proper sequence to avoid potential routing errors. Alternatively, the Network
@@ -87,8 +93,8 @@ network. However, two example methods are outlined here:
 1. The participant obtains the active Routing Salt sources from the network's
    known source or a well known location hosted by their Facilitator
 2. The participlant calculates a cryptographic hash (the specific algorithm is a
-   property of the network, but likely SHA-2-256) of the common identifier for
-   the Person using the Routing Salt source as the algorithm's salt.
+   property of the network) of the common identifier for the Person using the
+   Routing Salt source as the algorithm's salt.
 3. The hash from step 2 is returned as bytes. This is the Routing Salt for the
    Person.
 
@@ -116,8 +122,8 @@ that are likely to have matching documents for the Person.
 
 1. The participant derives the Routing Salt for the Person
 2. The participlant calculates a cryptographic hash (the specific algorithm is a
-   property of the network, but likely SHA-2-256) of the common identifier for
-   the Person using the Routing Salt as the hash algorithm's salt.
+   property of the network) of the common identifier for the Person using the
+   Routing Salt as the hash algorithm's salt.
 3. The hash from step 2 is converted to url safe base64. This is the Routing Key
    for the Person.
 
@@ -137,7 +143,7 @@ periods.
 ## Search Flow
 
 The Open Person Matching Search Flow defines a process by which a Requestor may
-discover a set of responders who have documents pertaining to a specific Person
+discover a set of Responders who have documents pertaining to a specific Person
 identified by a sufficiently unique combination of descriptors without
 disclosing the value of those descriptors to any Responder, Requestor, or
 Facilitator that does not already have them.
@@ -180,8 +186,8 @@ Routing Key.
 #### The Search Responder
 
 A Responder must register Routing Keys with a Facilitator for each Person for
-which they have documents. This requires the Responder to subscribe to updates
-to the Routing Salts and recalculate the Routing Keys promptly according to the
+whom they have documents. This requires the Responder to subscribe to updates to
+the Routing Salts and recalculate the Routing Keys promptly according to the
 Routing Salt rotation strategy. When a Facilitator recieves a Request the
 Request is forwareded to every Responder that has registered at least one
 matching Routing Key. The Responder then uses the Request nonce to generate its
@@ -282,6 +288,13 @@ bits require a Responder to do 2^n hashes, but they require an attacker to do
 NOTE: DO NOT attempt to use this as a mechanism to exchange secret key material.
 The demographic information that makes up the rest of the hash input is known by
 many parties, all of whom could easily deduce these bits.
+
+To prevent undue burden on Responders, Requests without a Response ID must not
+contain Random Bits Demographic Identifiers. Requests with a Response ID should
+use the Random Bits that they derrived from the correlated Response the Response
+ID refers to. This puts the computational cost of deducing the random bits on
+the Requestor rather than the Responder. This restriction requires the Responder
+to respond to inital Requests that may only contain the Routing Key.
 
 #### Well Known Complex Demographic Identifier Types
 
@@ -427,3 +440,27 @@ in order be able to route correlated Responses and Requests to their appropriate
 destination. Because Requests and Responses may travel through multiple
 Facilitators, participants must ensure that they deliver correlated messages as
 quickly as possible, preferably within less than half the session timeout.
+
+## Defined Network Properties
+
+The mechanism for defining and sharing network properties is not specified at
+this time. However there are several properties that an Open Person Matching
+network must define. These include:
+
+1. The algorithm for obtaining the current and recent Routing Salt Sources
+2. The complex demographic identifier or demographic hash object used to
+   calculate routing keys
+3. The currently used algorithm for deriving a Routing Salt
+4. The currently used algorithm for deriving a Routing Key
+5. The currently used hashing algorithm for demographic hashes
+6. Request Session Timeout - the amount of time a Requestor and Facilitator
+   should maintain a reference to a Request that Responses may be associated
+   with
+7. Response Session Timeout - the amount of time a Responder and Facilitator
+   should maintain a reference to a Responses that future Requests may be
+   associated with
+8. acceptable authentication protocols for Faciltators on the network
+
+An Open Person Matching network must not define these properties in a way that
+is insufficiently secure or results in the disclosure of demographic information
+to any party that does not already have it.

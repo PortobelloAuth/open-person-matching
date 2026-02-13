@@ -86,7 +86,8 @@ of Individual Access Services - where patients use a service to request their
 own records - the patient's identity is authenticated, but authorization
 consists of limiting the patient to requesting their own information. Also,
 patient information and the authentication token are still routed to providers
-based on their trusted status on the network.
+based on their trusted status on the network, leaving them available for
+potential abuse.
 
 Health Information Networks do take steps to ensure that requests are only
 routed to providers that are likely to have a patient's records. This is often
@@ -97,14 +98,14 @@ all possible providers would require bandwidth and compute resources that would
 be prohibitivly expensive for participants to allocate. From a security
 perspective, preventing patient personally identifiable information from being
 sent to every possible provider means that every provider's audit logs don't
-contain every possible patient's data. Notably, providers can not fully rely on
+contain every possible patient's data. Notably, providers do not fully rely on
 the network's patient matching and run their own patient matching to ensure they
 don't disclose the wrong patient's health records. The implication is that the
 MPI or RLS is likely to result in contacting at least some providers that will
 not actually respond with records for the patient.
 
 Because Open Person Matching is intended to operate not only in a trusted
-network like an Health Information Network but also in an open one, it cannot
+network like a Health Information Network but also in an open one, it cannot
 rely on audited trusted nodes. Even in a trusted network every point of trust
 represents a point where security can fail. Open Person Matching seeks to learn
 from and improve upon the design and experience of Health Information Networks.
