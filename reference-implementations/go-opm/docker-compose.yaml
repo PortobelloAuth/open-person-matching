@@ -1,0 +1,59 @@
+version: "3.8"
+services:
+  yugabytedb-facilitator:
+    image: yugabytedb/yugabyte:2025.2.1.0-b141
+    # hostname is critical to get yugabyte to listen on anything
+    # other than the localhost address within docker, making it
+    # inaccessible from te host machine and other containers.
+    hostname: yugabytedb-facilitator
+    ports:
+      - "7001:7000" # YB-Master UI
+      - "9000:9000" # YB-TServer UI
+      - "15433:15433" # YSQL API
+      - "5433:5433" # YSQL API (PostgreSQL compatible)
+      - "9042:9042" # YCQL API (Cassandra compatible)
+    command: |
+      bash -c '
+      mkdir -p /var/ybinit
+      echo "create user $${YUGABYTE_USER} with password '\''$${YUGABYTE_PASSWORD}'\'';" > /var/ybinit/01-usr.sql
+      echo "create database $${YUGABYTE_DB:-$${YUGABYTE_USER}} OWNER $${YUGABYTE_USER};" > /var/ybinit/02-db.sql
+      # start YugabyteDB
+      bin/yugabyted start --background=false --initial_scripts_dir=/var/ybinit --tserver_flags=ysql_enable_auth=true
+      '
+    environment:
+      - YUGABYTE_DB=opm_facilitator
+      - YUGABYTE_USER=opm_facilitator
+      - YUGABYTE_PASSWORD=A3adPwd4YGDB!
+    volumes:
+      - yugabyte_facilitator_data:/home/yugabyte/yb_data
+
+  yugabytedb-responder:
+    image: yugabytedb/yugabyte:2025.2.1.0-b141
+    # hostname is critical to get yugabyte to listen on anything
+    # other than the localhost address within docker, making it
+    # inaccessible from te host machine and other containers.
+    hostname: yugabytedb-responder
+    ports:
+      - "7011:7000" # YB-Master UI
+      - "9010:9000" # YB-TServer UI
+      - "15443:15433" # YSQL API
+      - "5443:5433" # YSQL API (PostgreSQL compatible)
+      - "9052:9042" # YCQL API (Cassandra compatible)
+    command: |
+      bash -c '
+      mkdir -p /var/ybinit
+      echo "create user $${YUGABYTE_USER} with password '\''$${YUGABYTE_PASSWORD}'\'';" > /var/ybinit/01-usr.sql
+      echo "create database $${YUGABYTE_DB:-$${YUGABYTE_USER}} OWNER $${YUGABYTE_USER};" > /var/ybinit/02-db.sql
+      # start YugabyteDB
+      bin/yugabyted start --background=false --initial_scripts_dir=/var/ybinit --tserver_flags=ysql_enable_auth=true
+      '
+    environment:
+      - YUGABYTE_DB=opm_responder
+      - YUGABYTE_USER=opm_responder
+      - YUGABYTE_PASSWORD=A3adPwd4YGDB!
+    volumes:
+      - yugabyte_responder_data:/home/yugabyte/yb_data
+
+volumes:
+  yugabyte_facilitator_data:
+  yugabyte_responder_data:

@@ -12,9 +12,15 @@ communications with options for spam filtering agents. These use cases and the
 base algorithm also allow it to be used for patient matching and medical records
 search, a domain from which it draws many design goals.
 
-Separate specifications for self-sovereign signing and encryption keys and
-digital authorization documents (and other contracts) are in progress and will
-be referenced here after their first public drafts are published.
+## Companion Specifications
+
+Open Person Matching is intended to be used with the
+[Independent Identity Endorsements](/PortobelloAuth/independent-id-endorsements)
+and [Open Independent ID](/PortobelloAuth/open-indepentent-id) specifications to
+create a digital Identity, Authentication, Authorization, and Privacy framework
+that allows individuals control of their own identity and accounts, including
+delegated, limited access by human and automated agents, without account sharing
+and other insecure practices.
 
 ## Draft Status
 
@@ -69,7 +75,7 @@ certain policies and to allow audits, but the network has limited visibility in
 to what each participant is actually doing. It is hard enough to secure a
 network when you own every node. It is much harder when all you can do is
 periodic audits. Communication protocols for an inter-organizational network
-must meet a higher standard. An inter-organizationl network must take steps to
+must meet a higher standard. An inter-organizational network must take steps to
 verify that it is only communicating confidential information to other nodes
 that are authorized to recieve it or have demonstrated that they already have
 it.
