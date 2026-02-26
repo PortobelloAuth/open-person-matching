@@ -15,12 +15,12 @@ search, a domain from which it draws many design goals.
 ## Companion Specifications
 
 Open Person Matching is intended to be used with the
-[Independent Identity Endorsements](/PortobelloAuth/independent-id-endorsements)
-and [Open Independent ID](/PortobelloAuth/open-indepentent-id) specifications to
-create a digital Identity, Authentication, Authorization, and Privacy framework
-that allows individuals control of their own identity and accounts, including
-delegated, limited access by human and automated agents, without account sharing
-and other insecure practices.
+[Independent Identity Endorsements](https://github.com/PortobelloAuth/independent-id-endorsements)
+and [Open Independent ID](https://github.com/PortobelloAuth/open-indepentent-id)
+specifications to create a digital Identity, Authentication, Authorization, and
+Privacy framework that allows individuals control of their own identity and
+accounts, including delegated, limited access by human and automated agents,
+without account sharing and other insecure practices.
 
 ## Draft Status
 
